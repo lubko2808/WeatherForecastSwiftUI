@@ -5,7 +5,6 @@
 //  Created by Любомир  Чорняк on 02.08.2023.
 //
 
-import Combine
 import CoreLocation
 import MapKit
 
@@ -27,8 +26,6 @@ class MainViewModel: NSObject, ObservableObject {
     private var weatherModel: WeatherModel?
     private var weatherFormatter = WeatherDataFormatter()
     
-    private var cancellables = Set<AnyCancellable>()
-    
     private var currentLatitude: CLLocationDegrees?
     private var currentLongitude: CLLocationDegrees?
     private let locationManager = CLLocationManager()
@@ -49,6 +46,7 @@ class MainViewModel: NSObject, ObservableObject {
         self.dayAndNightTemp = []
     }
     
+    @MainActor
     private func handleData() {
         
         guard let weatherModel else {
@@ -107,19 +105,10 @@ class MainViewModel: NSObject, ObservableObject {
         geocoder(city: cityName) { [weak self] latitude, longitude in
             guard let self = self else { return }
             
-            self.dataService.fetch(.forecast(latitude: latitude, longitude: longitude))
-                .sink { completion in
-                    switch completion {
-                    case .finished:
-                        print("finished")
-                    case .failure(let error):
-                        self.handleError(errorMessage: error.localizedDescription)
-                    }
-                } receiveValue: { weather in
-                    self.weatherModel = weather
-                    self.handleData()
-                }
-                .store(in: &self.cancellables)
+            Task {
+                self.weatherModel = try await self.dataService.fetch(.forecast(latitude: latitude, longitude: longitude))
+                await self.handleData()
+            }
         }
     }
 }
@@ -149,23 +138,20 @@ extension MainViewModel: CLLocationManagerDelegate {
             self.isCityReady = true
             
         }
-        
+
         currentLatitude = currentLocation.coordinate.latitude
         currentLongitude = currentLocation.coordinate.longitude
         
-        dataService.fetch(.forecast(latitude: currentLatitude!, longitude: currentLongitude!))
-            .sink { completion in
-                switch completion {
-                case .finished:
-                    print("finished")
-                case .failure(let error):
+        Task {
+            do {
+                weatherModel = try await dataService.fetch(.forecast(latitude: currentLatitude!, longitude: currentLongitude!))
+                await self.handleData()
+            } catch {
+                await MainActor.run {
                     self.handleError(errorMessage: error.localizedDescription)
                 }
-            } receiveValue: { weather in
-                self.weatherModel = weather
-                self.handleData()
             }
-            .store(in: &cancellables)
+        }
         
     }
     

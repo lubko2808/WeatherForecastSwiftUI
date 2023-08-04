@@ -95,6 +95,9 @@ struct NewCityView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
+            .onDisappear {
+                viewModel.cancelTasks()
+            }
         }
     }
     

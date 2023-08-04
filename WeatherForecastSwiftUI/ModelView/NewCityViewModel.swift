@@ -19,12 +19,19 @@ class NewCityViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var cityModel: CityModel?
     
+    private var tasks: [Task<Void, Never>] = []
+    
     @Published var cities: [String] = []
     @Published var countries: [String] = []
     
     init(dataService: DataService) {
         self.dataService = dataService
         addTextFieldSubscriber()
+    }
+    
+    func cancelTasks() {
+        tasks.forEach({ $0.cancel() })
+        tasks = []
     }
     
     private func addTextFieldSubscriber() {
@@ -44,26 +51,19 @@ class NewCityViewModel: ObservableObject {
     
     func fetchCities(beginningWith prefix: String) {
         
-        dataService.fetch(.city(prefix: prefix))
-            .sink { [weak self] completion in
-                guard let self = self else { return }
-                
-                switch completion {
-                case .finished:
-                    print("finished")
-                case .failure(let error):
-                    self.errorMessage = error.localizedDescription
-                    self.isError.toggle()
-                }
-            } receiveValue: { citiesData in
-                self.cityModel = citiesData
-                self.handleData()
-                
+        let task = Task {
+            do {
+                cityModel = try await dataService.fetch(.city(prefix: prefix))
+                await handleData()
+            } catch {
+                errorMessage = error.localizedDescription
+                isError.toggle()
             }
-            .store(in: &cancellables)
-        
+        }
+        tasks.append(task)
     }
     
+    @MainActor
     private func handleData() {
         guard let cityModel = cityModel else {
             self.errorMessage = "The data is missing"
@@ -79,8 +79,6 @@ class NewCityViewModel: ObservableObject {
         }
         cities = tempCites
         countries = tempCountries
-        
-        print("everything was good")
     }
     
 }
