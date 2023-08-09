@@ -35,7 +35,7 @@ struct MainView: View {
                     VStack(spacing: 15) {
                         ForEach(0..<viewModel.dayAndNightTemp.count, id: \.self) { index in
                             
-                            WeatherForDay(weatherType: viewModel.weatherTypes[index].rawValue, day: viewModel.days[index], dayAndNightTemp: viewModel.dayAndNightTemp[index], sequenceNumber: index)
+                            WeatherForDay(weatherType: viewModel.weatherTypes[index], day: viewModel.days[index], dayAndNightTemp: viewModel.dayAndNightTemp[index], sequenceNumber: index)
                         }
                     }
                 }

@@ -27,9 +27,11 @@ struct WeatherDataFormatter {
         case thunderstorm = "cloud.bolt.rain.fill"
     }
     
-    private let degreeSing = "\u{00B0}"
+    let degreeSing = "\u{00B0}"
 
-    func getWeatherType(_ rawWeather: WeatherModel, for day: Int) -> WeatherIcon {
+    func getWeatherType(_ rawWeather: WeatherModel, for day: Int) -> WeatherIcon? {
+        guard (day * 24 + 22) < rawWeather.hourly.weathercode.count else { return nil }
+        
         var sunnyHoursCount = 0
         var partlyCloudyHoursCount = 0
         var cloudyHoursCount = 0
@@ -73,21 +75,26 @@ struct WeatherDataFormatter {
         }
     }
     
-    func getCurrentTemperature(_ rawWeather: WeatherModel) -> String {
+    func getCurrentTemperature(_ rawWeather: WeatherModel) -> String? {
         let currentDate = Date()
         let calendar = Calendar.current
         let currentHour = calendar.component(.hour, from: currentDate)
+        guard currentHour < rawWeather.hourly.temperature_2m.count else { return nil}
         let currentTemperature = rawWeather.hourly.temperature_2m[currentHour]
         return String(currentTemperature) + degreeSing
     }
     
-    func getDayAndNightTemperature(_ rawWeather: WeatherModel, for index: Int) -> String {
+    func getDayAndNightTemperature(_ rawWeather: WeatherModel, for index: Int) -> String? {
+        guard (index * 24 + 13) < rawWeather.hourly.temperature_2m.count else { return nil }
+        
         let dayAndNightTemperature = String(rawWeather.hourly.temperature_2m[index * 24 + 2]) + degreeSing + "/" +
         String(rawWeather.hourly.temperature_2m[index * 24 + 13]) + degreeSing
         return dayAndNightTemperature
     }
     
-    func day(at index: Int) -> String {
+    func day(at index: Int) -> String? {
+        guard index >= 0  else { return nil }
+        
         let dayDict = [0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat"]
         let currentDate = Date()
         let calendar = Calendar.current
@@ -95,4 +102,5 @@ struct WeatherDataFormatter {
         
         return dayDict[ (currentDay + index) % 7 ]!
     }
+    
 }

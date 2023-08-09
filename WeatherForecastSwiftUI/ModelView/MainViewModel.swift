@@ -20,7 +20,7 @@ class MainViewModel: NSObject, ObservableObject {
 
     @Published var currentCity = ""
     @Published var currentTemp = ""
-    @Published var weatherTypes: [WeatherDataFormatter.WeatherIcon] = []
+    @Published var weatherTypes: [String] = []
     @Published var days: [String] = []
     @Published var dayAndNightTemp: [String] = []
     
@@ -56,23 +56,23 @@ class MainViewModel: NSObject, ObservableObject {
             return
         }
         
-        currentTemp = weatherFormatter.getCurrentTemperature(weatherModel)
+        currentTemp = weatherFormatter.getCurrentTemperature(weatherModel) ?? ""
         
         var tempDayAndNightTemp: [String] = []
         for index in 0...4 {
-            tempDayAndNightTemp.append(weatherFormatter.getDayAndNightTemperature(weatherModel, for: index))
+            tempDayAndNightTemp.append(weatherFormatter.getDayAndNightTemperature(weatherModel, for: index) ?? "")
         }
         dayAndNightTemp = tempDayAndNightTemp
         
         var tempDays: [String] = []
         for index in 0...4 {
-            tempDays.append(weatherFormatter.day(at: index))
+            tempDays.append(weatherFormatter.day(at: index) ?? "")
         }
         days = tempDays
         
-        var tempWeatherTypes: [WeatherDataFormatter.WeatherIcon] = []
+        var tempWeatherTypes: [String] = []
         for index in 0...4 {
-            tempWeatherTypes.append(weatherFormatter.getWeatherType(weatherModel, for: index))
+            tempWeatherTypes.append(weatherFormatter.getWeatherType(weatherModel, for: index)?.rawValue ?? "")
         }
         weatherTypes = tempWeatherTypes
 
