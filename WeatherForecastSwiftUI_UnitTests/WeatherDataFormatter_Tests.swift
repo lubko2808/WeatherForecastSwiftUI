@@ -27,6 +27,142 @@ final class WeatherDataFormatter_Tests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
     
+    func test_WeatherDataFormatter_getWeatherType_shouldReturnNil() {
+        // Given
+        let day = Int.random(in: 0..<10)
+        
+        // When
+        var weatherCodes: [Int] = []
+        
+        for _ in 0..<(day * 24 + 22) {
+            weatherCodes.append(weatherCodes.randomElement() ?? 0)
+        }
+        let weatherModel = WeatherModel(hourly: .init(temperature_2m: [], weathercode: weatherCodes))
+        let returnedResult = weatherDataFormatter.getWeatherType(weatherModel, for: day)
+        
+        // Then
+        XCTAssertNil(returnedResult)
+    }
+    
+    func test_WeatherDataFormatter_getDayAndNightTemperature_shouldReturnCorrectTemp() {
+        // Given
+        let day = Int.random(in: 0..<10)
+        var correctDayAndNightTemp = String()
+        
+        var temperature_2m: [Double] = []
+        for index in 0...(day * 24 + 13) {
+            if index == (day * 24 + 2) {
+                let nightTemp = Double.random(in: -30...30)
+                temperature_2m.append(nightTemp)
+                correctDayAndNightTemp += nightTemp.description + weatherDataFormatter.degreeSing + "/"
+            } else if index == (day * 24 + 13) {
+                let dayTemp = Double.random(in: -30...30)
+                temperature_2m.append(dayTemp)
+                correctDayAndNightTemp += dayTemp.description + weatherDataFormatter.degreeSing
+            } else {
+                temperature_2m.append(Double.random(in: -30...30))
+            }
+        }
+        let weatherModel = WeatherModel(hourly: .init(temperature_2m: temperature_2m, weathercode: []))
+        
+        // When
+        let returnedResult = weatherDataFormatter.getDayAndNightTemperature(weatherModel, for: day)
+        
+        // Then
+        XCTAssertEqual(returnedResult, correctDayAndNightTemp)
+    }
+    
+    func test_WeatherDataFormatter_getDayAndNightTemperature_shouldReturnNil() {
+        // Given
+        let day = Int.random(in: 0..<10)
+
+        // When
+        var temperature_2m: [Double] = []
+        
+        for _ in 0..<(day * 24 + 13) {
+            temperature_2m.append(Double.random(in: -30...30))
+        }
+        let weatherModel = WeatherModel(hourly: .init(temperature_2m: temperature_2m, weathercode: []))
+        let returnedResult = weatherDataFormatter.getDayAndNightTemperature(weatherModel, for: day)
+        
+        // Then
+        XCTAssertNil(returnedResult)
+    }
+
+    func test_WeatherDataFormatter_getCurrentTemperature_shouldReturnCorrectTemp() {
+        // Given
+        //let currentHour = Int.random(in: 0...23)
+        let currentHour = Calendar.current.component(.hour, from: Date())
+
+        var currentTemp = Double()
+        
+        var temperature_2m: [Double] = []
+        for index in 0..<24 {
+            if index == currentHour {
+                currentTemp = Double.random(in: -30...30)
+                temperature_2m.append(currentTemp)
+            } else {
+                temperature_2m.append(Double.random(in: -30...30))
+            }
+        }
+        let weatherModel = WeatherModel(hourly: .init(temperature_2m: temperature_2m, weathercode: []))
+        
+        // When
+        let returnedResult = weatherDataFormatter.getCurrentTemperature(weatherModel)
+        
+        // Then
+        XCTAssertEqual(returnedResult, currentTemp.description + weatherDataFormatter.degreeSing)
+    }
+    
+    func test_WeatherDataFormatter_getCurrentTemperature_shouldReturnNil() {
+        // Given
+        let currentHour = Int.random(in: 0...23)
+        //let currentHour = Calendar.current.component(.hour, from: Date())
+        
+        // When
+        var temperature_2m: [Double] = []
+        for _ in 0..<currentHour {
+            temperature_2m.append(Double.random(in: -30...30))
+        }
+        let weatherModel = WeatherModel(hourly: .init(temperature_2m: temperature_2m, weathercode: []))
+        
+        let returnedResult = weatherDataFormatter.getCurrentTemperature(weatherModel)
+        
+        // Then
+        XCTAssertNil(returnedResult)
+    }
+    
+    func test_WeatherDataFormatter_day_ShouldReturnCorrectDay() {
+        let dayDict = [0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat"]
+        let currentDay = Calendar.current.component(.weekday, from: Date() ) - 1
+        
+        for _ in 0..<100 {
+            // Given
+            let index = Int.random(in: 0..<100)
+            
+            let correctDay = dayDict[ (currentDay + index) % 7 ]!
+            
+            // When
+            let returnedDay = weatherDataFormatter.day(at: index)
+            
+            // Then
+            XCTAssertEqual(returnedDay, correctDay)
+        }
+    }
+    
+    func test_WeatherDataFormatter_day_ShouldReturnNil() {
+        for _ in 0...10 {
+            // Given
+            let index = Int.random(in: -100..<0)
+            
+            // When
+            let result = weatherDataFormatter.day(at: index)
+            
+            // Then
+            XCTAssertNil(result)
+        }
+    }
+    
     private func generateThreeSetOfRandomPositions(lowerBound: Int, upperBound: Int, fraction1: Int, fraction2: Int) -> ([Int], [Int], [Int]) {
         let count = upperBound - lowerBound + 1
         let fraction3 = count - fraction2 - fraction1
@@ -240,142 +376,6 @@ final class WeatherDataFormatter_Tests: XCTestCase {
             
             // Then
             XCTAssertEqual(returnedResult, WeatherDataFormatter.WeatherIcon.thunderstorm)
-        }
-    }
-    
-    func test_WeatherDataFormatter_getWeatherType_shouldReturnNil() {
-        // Given
-        let day = Int.random(in: 0..<10)
-        
-        // When
-        var weatherCodes: [Int] = []
-        
-        for _ in 0..<(day * 24 + 22) {
-            weatherCodes.append(weatherCodes.randomElement() ?? 0)
-        }
-        let weatherModel = WeatherModel(hourly: .init(temperature_2m: [], weathercode: weatherCodes))
-        let returnedResult = weatherDataFormatter.getWeatherType(weatherModel, for: day)
-        
-        // Then
-        XCTAssertNil(returnedResult)
-    }
-    
-    func test_WeatherDataFormatter_getDayAndNightTemperature_shouldReturnCorrectTemp() {
-        // Given
-        let day = Int.random(in: 0..<10)
-        var correctDayAndNightTemp = String()
-        
-        var temperature_2m: [Double] = []
-        for index in 0...(day * 24 + 13) {
-            if index == (day * 24 + 2) {
-                let nightTemp = Double.random(in: -30...30)
-                temperature_2m.append(nightTemp)
-                correctDayAndNightTemp += nightTemp.description + weatherDataFormatter.degreeSing + "/"
-            } else if index == (day * 24 + 13) {
-                let dayTemp = Double.random(in: -30...30)
-                temperature_2m.append(dayTemp)
-                correctDayAndNightTemp += dayTemp.description + weatherDataFormatter.degreeSing
-            } else {
-                temperature_2m.append(Double.random(in: -30...30))
-            }
-        }
-        let weatherModel = WeatherModel(hourly: .init(temperature_2m: temperature_2m, weathercode: []))
-        
-        // When
-        let returnedResult = weatherDataFormatter.getDayAndNightTemperature(weatherModel, for: day)
-        
-        // Then
-        XCTAssertEqual(returnedResult, correctDayAndNightTemp)
-    }
-    
-    func test_WeatherDataFormatter_getDayAndNightTemperature_shouldReturnNil() {
-        // Given
-        let day = Int.random(in: 0..<10)
-
-        // When
-        var temperature_2m: [Double] = []
-        
-        for _ in 0..<(day * 24 + 13) {
-            temperature_2m.append(Double.random(in: -30...30))
-        }
-        let weatherModel = WeatherModel(hourly: .init(temperature_2m: temperature_2m, weathercode: []))
-        let returnedResult = weatherDataFormatter.getDayAndNightTemperature(weatherModel, for: day)
-        
-        // Then
-        XCTAssertNil(returnedResult)
-    }
-
-    func test_WeatherDataFormatter_getCurrentTemperature_shouldReturnCorrectTemp() {
-        // Given
-        //let currentHour = Int.random(in: 0...23)
-        let currentHour = Calendar.current.component(.hour, from: Date())
-
-        var currentTemp = Double()
-        
-        var temperature_2m: [Double] = []
-        for index in 0..<24 {
-            if index == currentHour {
-                currentTemp = Double.random(in: -30...30)
-                temperature_2m.append(currentTemp)
-            } else {
-                temperature_2m.append(Double.random(in: -30...30))
-            }
-        }
-        let weatherModel = WeatherModel(hourly: .init(temperature_2m: temperature_2m, weathercode: []))
-        
-        // When
-        let returnedResult = weatherDataFormatter.getCurrentTemperature(weatherModel)
-        
-        // Then
-        XCTAssertEqual(returnedResult, currentTemp.description + weatherDataFormatter.degreeSing)
-    }
-    
-    func test_WeatherDataFormatter_getCurrentTemperature_shouldReturnNil() {
-        // Given
-        let currentHour = Int.random(in: 0...23)
-        //let currentHour = Calendar.current.component(.hour, from: Date())
-        
-        // When
-        var temperature_2m: [Double] = []
-        for _ in 0..<currentHour {
-            temperature_2m.append(Double.random(in: -30...30))
-        }
-        let weatherModel = WeatherModel(hourly: .init(temperature_2m: temperature_2m, weathercode: []))
-        
-        let returnedResult = weatherDataFormatter.getCurrentTemperature(weatherModel)
-        
-        // Then
-        XCTAssertNil(returnedResult)
-    }
-    
-    func test_WeatherDataFormatter_day_ShouldReturnCorrectDay() {
-        let dayDict = [0: "Sun", 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat"]
-        let currentDay = Calendar.current.component(.weekday, from: Date() ) - 1
-        
-        for _ in 0..<100 {
-            // Given
-            let index = Int.random(in: 0..<100)
-            
-            let correctDay = dayDict[ (currentDay + index) % 7 ]!
-            
-            // When
-            let returnedDay = weatherDataFormatter.day(at: index)
-            
-            // Then
-            XCTAssertEqual(returnedDay, correctDay)
-        }
-    }
-    
-    func test_WeatherDataFormatter_day_ShouldReturnNil() {
-        for _ in 0...10 {
-            // Given
-            let index = Int.random(in: -100..<0)
-            
-            // When
-            let result = weatherDataFormatter.day(at: index)
-            
-            // Then
-            XCTAssertNil(result)
         }
     }
 
